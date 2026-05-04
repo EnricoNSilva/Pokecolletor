@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigation } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
@@ -37,6 +37,7 @@ const TOP_BAR_HEIGHT = CUSTOM_HEADER_HEIGHT + SEARCH_BAR_HEIGHT + TOP_BAR_GAP;
 
 export default function SetsScreen() {
   const navigation = useNavigation();
+  const router = useRouter();
   const [sets, setSets] = useState<PokemonTcgSet[]>([]);
   const [search, setSearch] = useState("");
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
@@ -310,10 +311,13 @@ export default function SetsScreen() {
         renderItem={({ item }) => (
           <Pressable
             onPress={() =>
-              Alert.alert(
-                "Próxima etapa",
-                `Abrir cartas da expansão ${item.name}.`,
-              )
+              router.push({
+                pathname: "/deck",
+                params: {
+                  setId: item.id,
+                  setName: item.name,
+                },
+              })
             }
             style={styles.card}
           >

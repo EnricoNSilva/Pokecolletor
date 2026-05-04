@@ -1,6 +1,6 @@
-import axios from 'axios/dist/browser/axios.cjs';
+import axios from "axios/dist/browser/axios.cjs";
 
-const BASE_URL = 'https://api.pokemontcg.io/v2';
+const BASE_URL = "https://api.pokemontcg.io/v2";
 
 export type PokemonTcgSet = {
   id: string;
@@ -23,24 +23,61 @@ type ListSetsResponse = {
   totalCount: number;
 };
 
-const apiKey = process.env.EXPO_PUBLIC_POKEMON_TCG_API_KEY;
+export type PokemonTcgCard = {
+  id: string;
+  name: string;
+  number: string;
+  rarity?: string;
+  images: {
+    small: string;
+    large: string;
+  };
+  set: {
+    id: string;
+    name: string;
+    series: string;
+  };
+};
+
+type ListCardsResponse = {
+  data: PokemonTcgCard[];
+  page: number;
+  pageSize: number;
+  count: number;
+  totalCount: number;
+};
 
 const pokemonTcgApi = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
-  headers: apiKey
-    ? {
-        'X-Api-Key': apiKey,
-      }
-    : undefined,
 });
 
-export async function getSets(page = 1, pageSize = 30): Promise<ListSetsResponse> {
-  const response = await pokemonTcgApi.get<ListSetsResponse>('/sets', {
+export async function getSets(
+  page = 1,
+  pageSize = 30,
+): Promise<ListSetsResponse> {
+  const response = await pokemonTcgApi.get<ListSetsResponse>("/sets", {
     params: {
       page,
       pageSize,
-      orderBy: '-releaseDate',
+      orderBy: "-releaseDate",
+    },
+  });
+
+  return response.data;
+}
+
+export async function getCardsBySet(
+  setId: string,
+  page = 1,
+  pageSize = 24,
+): Promise<ListCardsResponse> {
+  const response = await pokemonTcgApi.get<ListCardsResponse>("/cards", {
+    params: {
+      q: `set.id:${setId}`,
+      page,
+      pageSize,
+      orderBy: "number",
     },
   });
 

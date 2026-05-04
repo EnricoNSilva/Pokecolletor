@@ -15,6 +15,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(drawer)" />
+        <Stack.Screen name="deck" />
         <Stack.Screen
           name="modal"
           options={{
