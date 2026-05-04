@@ -1,5 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Alert, Pressable } from "react-native";
 import { Drawer } from "expo-router/drawer";
+import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
+
+import { auth } from "@/services/firebase";
 
 const drawerTheme = {
   background: "#1E1E24",
@@ -10,6 +15,26 @@ const drawerTheme = {
 };
 
 export default function DrawerLayout() {
+  const router = useRouter();
+
+  async function handleLogout() {
+    if (!auth) {
+      Alert.alert(
+        "Firebase nao configurado",
+        "Preencha as variaveis do .env para sair corretamente.",
+      );
+      return;
+    }
+
+    try {
+      await signOut(auth);
+      router.replace("/login");
+    } catch (error) {
+      Alert.alert("Erro ao sair", "Nao foi possivel encerrar a sessao.");
+      console.error("Erro ao fazer logout:", error);
+    }
+  }
+
   return (
     <Drawer
       screenOptions={{
@@ -33,6 +58,19 @@ export default function DrawerLayout() {
           fontSize: 15,
           fontWeight: "600",
         },
+        headerRight: () => (
+          <Pressable
+            onPress={handleLogout}
+            hitSlop={10}
+            style={{ marginRight: 16 }}
+          >
+            <MaterialCommunityIcons
+              name="logout"
+              size={22}
+              color={drawerTheme.accent}
+            />
+          </Pressable>
+        ),
       }}
     >
       <Drawer.Screen
