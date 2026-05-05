@@ -112,6 +112,15 @@ export default function DrawerLayout() {
           ),
         }}
       />
+      <Drawer.Screen
+        name="decks"
+        options={{
+          title: "Meus Decks",
+          drawerIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="cards" size={size} color={color} />
+          ),
+        }}
+      />
     </Drawer>
   );
 }
