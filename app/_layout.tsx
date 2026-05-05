@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -14,6 +14,7 @@ export default function RootLayout() {
   const segments = useSegments();
   const [isReady, setIsReady] = useState(false);
   const [session, setSession] = useState<User | null>(null);
+  const isAuthenticated = useMemo(() => Boolean(session), [session]);
 
   useEffect(() => {
     if (!auth) {
@@ -73,10 +74,10 @@ export default function RootLayout() {
             },
           }}
         >
-          <Stack.Screen name="login" />
-          <Stack.Screen name="register" />
-          <Stack.Screen name="(drawer)" />
-          <Stack.Screen name="deck" />
+          <Stack.Screen name="login" redirect={isAuthenticated} />
+          <Stack.Screen name="register" redirect={isAuthenticated} />
+          <Stack.Screen name="(drawer)" redirect={!isAuthenticated} />
+          <Stack.Screen name="deck" redirect={!isAuthenticated} />
           <Stack.Screen
             name="modal"
             options={{

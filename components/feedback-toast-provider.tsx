@@ -82,7 +82,7 @@ export function FeedbackToastProvider({
   return (
     <FeedbackToastContext.Provider value={value}>
       {children}
-      <View pointerEvents="none" style={styles.toastContainer}>
+      <View style={styles.toastContainer}>
         <FeedbackToast message={message} tone={tone} />
       </View>
     </FeedbackToastContext.Provider>
@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
     left: 14,
     right: 14,
     top: 18,
+    pointerEvents: "none",
     zIndex: 9999,
     elevation: 20,
   },

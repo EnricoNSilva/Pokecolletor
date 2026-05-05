@@ -100,13 +100,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     paddingHorizontal: 14,
     paddingVertical: 13,
-    shadowColor: "#000",
-    shadowOpacity: 0.28,
-    shadowRadius: 16,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
     elevation: 12,
   },
   iconBadge: {

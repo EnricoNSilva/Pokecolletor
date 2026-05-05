@@ -1,12 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -34,6 +34,47 @@ const colors = {
   accent: "#FFD700",
 };
 
+function compareCardNumber(left: string, right: string) {
+  const leftNormalized = left.trim();
+  const rightNormalized = right.trim();
+
+  const leftMatch = leftNormalized.match(/^(\d+)([a-zA-Z]*)$/);
+  const rightMatch = rightNormalized.match(/^(\d+)([a-zA-Z]*)$/);
+
+  if (leftMatch && rightMatch) {
+    const leftBase = Number(leftMatch[1]);
+    const rightBase = Number(rightMatch[1]);
+
+    if (leftBase !== rightBase) {
+      return leftBase - rightBase;
+    }
+
+    const leftSuffix = leftMatch[2].toLowerCase();
+    const rightSuffix = rightMatch[2].toLowerCase();
+
+    return leftSuffix.localeCompare(rightSuffix);
+  }
+
+  return leftNormalized.localeCompare(rightNormalized, undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+function sortCardsByNumber(list: PokemonTcgCard[]) {
+  return [...list].sort((left, right) => {
+    const numberOrder = compareCardNumber(left.number, right.number);
+
+    if (numberOrder !== 0) {
+      return numberOrder;
+    }
+
+    return left.name.localeCompare(right.name, undefined, {
+      sensitivity: "base",
+    });
+  });
+}
+
 export default function DeckScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ setId?: string; setName?: string }>();
@@ -48,7 +89,6 @@ export default function DeckScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [ownedQuantities, setOwnedQuantities] = useState<
@@ -57,6 +97,17 @@ export default function DeckScreen() {
   const [pendingCardIds, setPendingCardIds] = useState<Record<string, boolean>>(
     {},
   );
+
+  function blurFocusedElementOnWeb() {
+    if (Platform.OS !== "web") {
+      return;
+    }
+
+    const activeElement = (globalThis as { document?: Document }).document
+      ?.activeElement as HTMLElement | null;
+
+    activeElement?.blur?.();
+  }
 
   const hasMore = cards.length < totalCount;
 
@@ -89,7 +140,7 @@ export default function DeckScreen() {
     }
   }
 
-  async function loadCards(nextPage = 1, append = false, showLoading = true) {
+  async function loadCards(nextPage = 1, append = false) {
     if (!setId) {
       setError("ID da expansão não informado.");
       setLoading(false);
@@ -97,7 +148,7 @@ export default function DeckScreen() {
     }
 
     try {
-      if (nextPage === 1 && !append && showLoading) {
+      if (nextPage === 1 && !append) {
         setLoading(true);
       }
 
@@ -108,9 +159,10 @@ export default function DeckScreen() {
       setError(null);
       const response = await getCardsBySet(setId, nextPage, 24);
 
-      setCards((previous) =>
-        append ? [...previous, ...response.data] : response.data,
-      );
+      setCards((previous) => {
+        const next = append ? [...previous, ...response.data] : response.data;
+        return sortCardsByNumber(next);
+      });
       setPage(response.page);
       setTotalCount(response.totalCount);
     } catch (loadError) {
@@ -129,7 +181,7 @@ export default function DeckScreen() {
   async function onRefresh() {
     try {
       setRefreshing(true);
-      await Promise.all([loadCards(1, false, false), loadOwnedCards()]);
+      await loadCards(1, false);
     } finally {
       setRefreshing(false);
     }
@@ -143,20 +195,13 @@ export default function DeckScreen() {
     await loadCards(page + 1, true);
   }
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!setId) {
-        return;
-      }
+  useEffect(() => {
+    loadCards(1, false);
+  }, [setId]);
 
-      void Promise.all([
-        loadCards(1, false, !hasLoadedOnce),
-        loadOwnedCards(),
-      ]).finally(() => {
-        setHasLoadedOnce(true);
-      });
-    }, [setId, hasLoadedOnce]),
-  );
+  useEffect(() => {
+    loadOwnedCards();
+  }, [setId]);
 
   async function handleToggleOwned(card: PokemonTcgCard) {
     if (!isFirebaseConfigured) {
@@ -275,7 +320,10 @@ export default function DeckScreen() {
     <View style={styles.container}>
       <View style={styles.topBar}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => {
+            blurFocusedElementOnWeb();
+            router.back();
+          }}
           hitSlop={10}
           style={styles.backButton}
         >

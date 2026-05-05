@@ -10,6 +10,7 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   RefreshControl,
@@ -48,6 +49,17 @@ export default function SetsScreen() {
   const topBarTranslateY = useRef(new Animated.Value(0)).current;
   const lastOffsetYRef = useRef(0);
   const isTopBarVisibleRef = useRef(true);
+
+  function blurFocusedElementOnWeb() {
+    if (Platform.OS !== "web") {
+      return;
+    }
+
+    const activeElement = (globalThis as { document?: Document }).document
+      ?.activeElement as HTMLElement | null;
+
+    activeElement?.blur?.();
+  }
 
   const preferredSeriesHints = [
     "mega",
@@ -120,7 +132,7 @@ export default function SetsScreen() {
     Animated.timing(topBarTranslateY, {
       toValue: show ? 0 : -TOP_BAR_HEIGHT,
       duration: 220,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   }
 
@@ -232,7 +244,10 @@ export default function SetsScreen() {
       >
         <View style={styles.customHeader}>
           <Pressable
-            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+            onPress={() => {
+              blurFocusedElementOnWeb();
+              navigation.dispatch(DrawerActions.toggleDrawer());
+            }}
             hitSlop={10}
             style={styles.menuButton}
           >
@@ -314,15 +329,16 @@ export default function SetsScreen() {
         }
         renderItem={({ item }) => (
           <Pressable
-            onPress={() =>
+            onPress={() => {
+              blurFocusedElementOnWeb();
               router.push({
                 pathname: "/deck",
                 params: {
                   setId: item.id,
                   setName: item.name,
                 },
-              })
-            }
+              });
+            }}
             style={styles.card}
           >
             <View style={styles.cardTop}>
@@ -490,10 +506,6 @@ const styles = StyleSheet.create({
   },
   spotlightCardActive: {
     borderColor: colors.accent,
-    shadowColor: colors.accent,
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 0 },
     elevation: 3,
   },
   spotlightLogo: {
