@@ -1,16 +1,24 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { ReactNode } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
-import { FeedbackToast } from '@/components/feedback-toast';
+import { FeedbackToast } from "@/components/feedback-toast";
 
 const colors = {
-  background: '#1E1E24',
-  surface: '#262631',
-  border: 'rgba(255, 255, 255, 0.08)',
-  text: '#F5F5F8',
-  muted: '#A5A5B4',
-  accent: '#FFD700',
+  background: "#1E1E24",
+  surface: "#262631",
+  border: "rgba(255, 255, 255, 0.08)",
+  text: "#F5F5F8",
+  muted: "#A5A5B4",
+  accent: "#FFD700",
 };
 
 type AuthScreenShellProps = {
@@ -19,7 +27,7 @@ type AuthScreenShellProps = {
   badge: string;
   children: ReactNode;
   feedbackMessage?: string | null;
-  feedbackTone?: 'success' | 'error' | 'info';
+  feedbackTone?: "success" | "error" | "info";
 };
 
 export function AuthScreenShell({
@@ -39,19 +47,25 @@ export function AuthScreenShell({
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoiding}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            isCompact ? styles.scrollContentCompact : styles.scrollContentRegular,
+            isCompact
+              ? styles.scrollContentCompact
+              : styles.scrollContentRegular,
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.hero}>
             <View style={styles.badge}>
-              <MaterialCommunityIcons name="pokeball" size={16} color={colors.accent} />
+              <MaterialCommunityIcons
+                name="pokeball"
+                size={16}
+                color={colors.accent}
+              />
               <Text style={styles.badgeText}>{badge}</Text>
             </View>
 
@@ -59,8 +73,16 @@ export function AuthScreenShell({
             <Text style={styles.subtitle}>{subtitle}</Text>
           </View>
 
-          <View style={[styles.card, isCompact ? styles.cardCompact : styles.cardRegular]}>
-            <FeedbackToast message={feedbackMessage ?? null} tone={feedbackTone} />
+          <View
+            style={[
+              styles.card,
+              isCompact ? styles.cardCompact : styles.cardRegular,
+            ]}
+          >
+            <FeedbackToast
+              message={feedbackMessage ?? null}
+              tone={feedbackTone}
+            />
             {children}
           </View>
         </ScrollView>
@@ -80,7 +102,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingVertical: 28,
   },
   scrollContentCompact: {
@@ -92,22 +114,22 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
   glow: {
-    position: 'absolute',
+    position: "absolute",
     top: -40,
     right: -20,
     width: 180,
     height: 180,
     borderRadius: 180,
-    backgroundColor: 'rgba(255, 215, 0, 0.08)',
+    backgroundColor: "rgba(255, 215, 0, 0.08)",
   },
   hero: {
     gap: 10,
     marginBottom: 18,
   },
   badge: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -119,13 +141,13 @@ const styles = StyleSheet.create({
   badgeText: {
     color: colors.text,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   title: {
     color: colors.text,
     fontSize: 34,
     lineHeight: 38,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   subtitle: {
     color: colors.muted,
@@ -139,8 +161,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 18,
     gap: 14,
-    width: '100%',
-    alignSelf: 'center',
+    width: "100%",
+    alignSelf: "center",
     maxWidth: 460,
   },
   cardCompact: {

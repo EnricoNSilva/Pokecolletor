@@ -1,23 +1,40 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { StyleSheet, View } from "react-native";
 
-import { FeedbackToast } from '@/components/feedback-toast';
+import { FeedbackToast } from "@/components/feedback-toast";
 
-type FeedbackTone = 'success' | 'error' | 'info';
+type FeedbackTone = "success" | "error" | "info";
 
 type FeedbackToastContextValue = {
-  showFeedback: (message: string, tone?: FeedbackTone, durationMs?: number) => void;
+  showFeedback: (
+    message: string,
+    tone?: FeedbackTone,
+    durationMs?: number,
+  ) => void;
 };
 
-const FeedbackToastContext = createContext<FeedbackToastContextValue | null>(null);
+const FeedbackToastContext = createContext<FeedbackToastContextValue | null>(
+  null,
+);
 
 type FeedbackToastProviderProps = {
   children: ReactNode;
 };
 
-export function FeedbackToastProvider({ children }: FeedbackToastProviderProps) {
+export function FeedbackToastProvider({
+  children,
+}: FeedbackToastProviderProps) {
   const [message, setMessage] = useState<string | null>(null);
-  const [tone, setTone] = useState<FeedbackTone>('info');
+  const [tone, setTone] = useState<FeedbackTone>("info");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hideFeedback = useCallback(() => {
@@ -29,7 +46,11 @@ export function FeedbackToastProvider({ children }: FeedbackToastProviderProps) 
   }, []);
 
   const showFeedback = useCallback(
-    (nextMessage: string, nextTone: FeedbackTone = 'info', durationMs = 3000) => {
+    (
+      nextMessage: string,
+      nextTone: FeedbackTone = "info",
+      durationMs = 3000,
+    ) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -72,7 +93,9 @@ export function useFeedbackToast() {
   const context = useContext(FeedbackToastContext);
 
   if (!context) {
-    throw new Error('useFeedbackToast deve ser usado dentro de FeedbackToastProvider.');
+    throw new Error(
+      "useFeedbackToast deve ser usado dentro de FeedbackToastProvider.",
+    );
   }
 
   return context;
@@ -80,7 +103,7 @@ export function useFeedbackToast() {
 
 const styles = StyleSheet.create({
   toastContainer: {
-    position: 'absolute',
+    position: "absolute",
     left: 14,
     right: 14,
     top: 18,
