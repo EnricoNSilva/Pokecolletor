@@ -121,6 +121,15 @@ export default function DrawerLayout() {
           ),
         }}
       />
+      <Drawer.Screen
+        name="tools"
+        options={{
+          title: "Ferramentas",
+          drawerIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="tools" size={size} color={color} />
+          ),
+        }}
+      />
     </Drawer>
   );
 }
