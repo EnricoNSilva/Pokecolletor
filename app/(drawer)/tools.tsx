@@ -25,10 +25,10 @@ const colors = {
   danger: "#FF6B6B",
 };
 
-const SOUND_URIS = {
-  flip: "https://actions.google.com/sounds/v1/foley/coins_3.ogg",
-  dice: "https://actions.google.com/sounds/v1/cartoon/pop.ogg",
-  timer: "https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg",
+const SOUND = {
+  flip: require("../../assets/sounds/freesound_community-coin-flip-88793.mp3"),
+  dice: require("../../assets/sounds/freesound_community-rolling-dice-2-102706.mp3"),
+  timer: require("../../assets/sounds/alexis_gaming_cam-timer-terminer-342934.mp3"),
 };
 
 type TimerStatus = "idle" | "running" | "paused";
@@ -46,9 +46,9 @@ export default function ToolsScreen() {
   const [isFlipping, setIsFlipping] = useState(false);
 
   const [diceValue, setDiceValue] = useState(1);
-  const [lastRollSource, setLastRollSource] = useState<"botao" | "shake" | null>(
-    null,
-  );
+  const [lastRollSource, setLastRollSource] = useState<
+    "botao" | "shake" | null
+  >(null);
   const [shakeEnabled, setShakeEnabled] = useState(true);
   const [shakeSupported, setShakeSupported] = useState(Platform.OS !== "web");
 
@@ -174,9 +174,9 @@ export default function ToolsScreen() {
         });
 
         const [flip, dice, timer] = await Promise.all([
-          Audio.Sound.createAsync({ uri: SOUND_URIS.flip }),
-          Audio.Sound.createAsync({ uri: SOUND_URIS.dice }),
-          Audio.Sound.createAsync({ uri: SOUND_URIS.timer }),
+          Audio.Sound.createAsync(SOUND.flip),
+          Audio.Sound.createAsync(SOUND.dice),
+          Audio.Sound.createAsync(SOUND.timer),
         ]);
 
         flipSoundRef.current = flip.sound;
@@ -288,7 +288,11 @@ export default function ToolsScreen() {
     >
       <View style={styles.hero}>
         <View style={styles.badge}>
-          <MaterialCommunityIcons name="tools" size={14} color={colors.accent} />
+          <MaterialCommunityIcons
+            name="tools"
+            size={14}
+            color={colors.accent}
+          />
           <Text style={styles.badgeText}>Ferramentas</Text>
         </View>
         <Text style={styles.title}>Centro de Partida</Text>
@@ -300,11 +304,15 @@ export default function ToolsScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Coin Flip</Text>
-          <MaterialCommunityIcons name="circle-double" size={20} color={colors.accent} />
+          <MaterialCommunityIcons
+            name="circle-double"
+            size={20}
+            color={colors.accent}
+          />
         </View>
 
         <Text style={styles.resultValue}>
-          {isFlipping ? "Girando..." : coinResult ?? "Pronto para lançar"}
+          {isFlipping ? "Girando..." : (coinResult ?? "Pronto para lançar")}
         </Text>
 
         <Pressable
@@ -319,15 +327,22 @@ export default function ToolsScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Dado d6</Text>
-          <MaterialCommunityIcons name="dice-6" size={20} color={colors.accent} />
+          <MaterialCommunityIcons
+            name="dice-6"
+            size={20}
+            color={colors.accent}
+          />
         </View>
 
         <Text style={styles.resultValue}>{diceValue}</Text>
         <Text style={styles.helperText}>
-          Ultima rolagem: {lastRollSource === "shake" ? "chacoalhar" : lastRollSource ?? "-"}
+          Ultima rolagem:{" "}
+          {lastRollSource === "shake" ? "chacoalhar" : (lastRollSource ?? "-")}
         </Text>
         {!shakeSupported ? (
-          <Text style={styles.warningText}>Acelerometro indisponivel neste dispositivo.</Text>
+          <Text style={styles.warningText}>
+            Acelerometro indisponivel neste dispositivo.
+          </Text>
         ) : null}
 
         <View style={styles.inlineRowBetween}>
@@ -336,12 +351,18 @@ export default function ToolsScreen() {
             value={shakeEnabled}
             onValueChange={setShakeEnabled}
             disabled={!shakeSupported}
-            trackColor={{ false: colors.surfaceAlt, true: "rgba(255, 215, 0, 0.45)" }}
+            trackColor={{
+              false: colors.surfaceAlt,
+              true: "rgba(255, 215, 0, 0.45)",
+            }}
             thumbColor={shakeEnabled ? colors.accent : colors.muted}
           />
         </View>
 
-        <Pressable style={styles.primaryButton} onPress={() => void rollDice("botao")}>
+        <Pressable
+          style={styles.primaryButton}
+          onPress={() => void rollDice("botao")}
+        >
           <Text style={styles.primaryButtonText}>Rolar dado</Text>
         </Pressable>
       </View>
@@ -349,7 +370,11 @@ export default function ToolsScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Timer de turno</Text>
-          <MaterialCommunityIcons name="timer-outline" size={20} color={colors.accent} />
+          <MaterialCommunityIcons
+            name="timer-outline"
+            size={20}
+            color={colors.accent}
+          />
         </View>
 
         <Text style={styles.timerText}>{formatTime(remainingSeconds)}</Text>
@@ -396,9 +421,14 @@ export default function ToolsScreen() {
 
       {Platform.OS === "web" ? (
         <View style={styles.noticeCard}>
-          <MaterialCommunityIcons name="information-outline" size={18} color={colors.muted} />
+          <MaterialCommunityIcons
+            name="information-outline"
+            size={18}
+            color={colors.muted}
+          />
           <Text style={styles.noticeText}>
-            No navegador, acelerometro/haptics podem ter suporte parcial conforme dispositivo.
+            No navegador, acelerometro/haptics podem ter suporte parcial
+            conforme dispositivo.
           </Text>
         </View>
       ) : null}
