@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 
 import { PokemonTcgCard } from "@/services/pokemon-tcg-api";
-import { db } from "@/services/firebase";
+import { auth, db } from "@/services/firebase";
 
 export type OwnedCard = {
   cardId: string;
@@ -23,6 +23,7 @@ export type OwnedCard = {
   createdAt: string;
 };
 
+const USERS_COLLECTION = "users";
 const BINDER_COLLECTION = "binderCards";
 
 function ensureDb() {
@@ -33,9 +34,25 @@ function ensureDb() {
   return db;
 }
 
-export async function getOwnedCardsBySet(setId: string): Promise<OwnedCard[]> {
+function ensureUserId() {
+  const currentUser = auth?.currentUser;
+
+  if (!currentUser) {
+    throw new Error("Usuario nao autenticado. Faça login novamente.");
+  }
+
+  return currentUser.uid;
+}
+
+function getBinderCollectionRef() {
   const firestore = ensureDb();
-  const binderRef = collection(firestore, BINDER_COLLECTION);
+  const userId = ensureUserId();
+
+  return collection(firestore, USERS_COLLECTION, userId, BINDER_COLLECTION);
+}
+
+export async function getOwnedCardsBySet(setId: string): Promise<OwnedCard[]> {
+  const binderRef = getBinderCollectionRef();
   const binderQuery = query(binderRef, where("setId", "==", setId));
   const snapshot = await getDocs(binderQuery);
 
@@ -49,18 +66,22 @@ export async function addOwnedCard(
   quantity = 1,
 ): Promise<void> {
   const firestore = ensureDb();
+  const userId = ensureUserId();
   const now = new Date().toISOString();
 
-  await setDoc(doc(firestore, BINDER_COLLECTION, card.id), {
-    cardId: card.id,
-    setId,
-    setName,
-    cardName: card.name,
-    imageSmall: card.images.small,
-    quantity,
-    updatedAt: now,
-    createdAt: now,
-  } satisfies OwnedCard);
+  await setDoc(
+    doc(firestore, USERS_COLLECTION, userId, BINDER_COLLECTION, card.id),
+    {
+      cardId: card.id,
+      setId,
+      setName,
+      cardName: card.name,
+      imageSmall: card.images.small,
+      quantity,
+      updatedAt: now,
+      createdAt: now,
+    } satisfies OwnedCard,
+  );
 }
 
 export async function updateOwnedCardQuantity(
@@ -68,19 +89,64 @@ export async function updateOwnedCardQuantity(
   quantity: number,
 ): Promise<void> {
   const firestore = ensureDb();
+  const userId = ensureUserId();
 
   if (quantity <= 0) {
     await deleteOwnedCard(cardId);
     return;
   }
 
-  await updateDoc(doc(firestore, BINDER_COLLECTION, cardId), {
-    quantity,
-    updatedAt: new Date().toISOString(),
-  });
+  await updateDoc(
+    doc(firestore, USERS_COLLECTION, userId, BINDER_COLLECTION, cardId),
+    {
+      quantity,
+      updatedAt: new Date().toISOString(),
+    },
+  );
 }
 
 export async function deleteOwnedCard(cardId: string): Promise<void> {
   const firestore = ensureDb();
-  await deleteDoc(doc(firestore, BINDER_COLLECTION, cardId));
+  const userId = ensureUserId();
+  await deleteDoc(
+    doc(firestore, USERS_COLLECTION, userId, BINDER_COLLECTION, cardId),
+  );
+}
+
+export type OwnedSet = {
+  setId: string;
+  setName: string;
+  totalCards: number;
+  uniqueCards: number;
+};
+
+export async function getOwnedSetsWithCounts(): Promise<OwnedSet[]> {
+  const binderRef = getBinderCollectionRef();
+  const snapshot = await getDocs(binderRef);
+
+  const setsMap = new Map<string, OwnedSet>();
+
+  snapshot.docs.forEach((doc) => {
+    const data = doc.data() as OwnedCard;
+
+    if (setsMap.has(data.setId)) {
+      const existing = setsMap.get(data.setId)!;
+      setsMap.set(data.setId, {
+        ...existing,
+        totalCards: existing.totalCards + data.quantity,
+        uniqueCards: existing.uniqueCards + 1,
+      });
+    } else {
+      setsMap.set(data.setId, {
+        setId: data.setId,
+        setName: data.setName,
+        totalCards: data.quantity,
+        uniqueCards: 1,
+      });
+    }
+  });
+
+  return Array.from(setsMap.values()).sort(
+    (a, b) => new Date(b.setId).getTime() - new Date(a.setId).getTime(),
+  );
 }

@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigation, useRouter } from "expo-router";
-import { DrawerActions } from "@react-navigation/native";
+import { DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
@@ -42,6 +42,7 @@ export default function SetsScreen() {
   const [search, setSearch] = useState("");
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const topBarTranslateY = useRef(new Animated.Value(0)).current;
@@ -74,6 +75,7 @@ export default function SetsScreen() {
       console.error("Erro ao carregar sets da API Pokémon TCG:", loadError);
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   }
 
@@ -86,9 +88,11 @@ export default function SetsScreen() {
     }
   }
 
-  useEffect(() => {
-    loadSets();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadSets(!hasLoadedOnce);
+    }, [hasLoadedOnce]),
+  );
 
   useEffect(() => {
     navigation.setOptions({

@@ -28,6 +28,8 @@ export type PokemonTcgCard = {
   name: string;
   number: string;
   rarity?: string;
+  supertype?: string;
+  subtypes?: string[];
   images: {
     small: string;
     large: string;
@@ -78,6 +80,23 @@ export async function getCardsBySet(
       page,
       pageSize,
       orderBy: "number",
+    },
+  });
+
+  return response.data;
+}
+
+export async function getCardsByName(
+  pokemonName: string,
+  page = 1,
+  pageSize = 50,
+): Promise<ListCardsResponse> {
+  const response = await pokemonTcgApi.get<ListCardsResponse>("/cards", {
+    params: {
+      q: `name:${pokemonName}*`,
+      page,
+      pageSize,
+      orderBy: "-set.releaseDate",
     },
   });
 

@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   ActivityIndicator,
   Alert,
@@ -47,6 +48,7 @@ export default function DeckScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [ownedQuantities, setOwnedQuantities] = useState<
@@ -87,7 +89,7 @@ export default function DeckScreen() {
     }
   }
 
-  async function loadCards(nextPage = 1, append = false) {
+  async function loadCards(nextPage = 1, append = false, showLoading = true) {
     if (!setId) {
       setError("ID da expansão não informado.");
       setLoading(false);
@@ -95,7 +97,7 @@ export default function DeckScreen() {
     }
 
     try {
-      if (nextPage === 1 && !append) {
+      if (nextPage === 1 && !append && showLoading) {
         setLoading(true);
       }
 
@@ -127,7 +129,7 @@ export default function DeckScreen() {
   async function onRefresh() {
     try {
       setRefreshing(true);
-      await loadCards(1, false);
+      await Promise.all([loadCards(1, false, false), loadOwnedCards()]);
     } finally {
       setRefreshing(false);
     }
@@ -141,13 +143,20 @@ export default function DeckScreen() {
     await loadCards(page + 1, true);
   }
 
-  useEffect(() => {
-    loadCards(1, false);
-  }, [setId]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!setId) {
+        return;
+      }
 
-  useEffect(() => {
-    loadOwnedCards();
-  }, [setId]);
+      void Promise.all([
+        loadCards(1, false, !hasLoadedOnce),
+        loadOwnedCards(),
+      ]).finally(() => {
+        setHasLoadedOnce(true);
+      });
+    }, [setId, hasLoadedOnce]),
+  );
 
   async function handleToggleOwned(card: PokemonTcgCard) {
     if (!isFirebaseConfigured) {
