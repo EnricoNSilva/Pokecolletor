@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 
-import { Deck, getDecksByUser } from "@/services/deck-crud";
+import { Deck, deleteDeck, getDecksByUser } from "@/services/deck-crud";
 import { isFirebaseConfigured } from "@/services/firebase";
 import { useFeedbackToast } from "@/components/feedback-toast-provider";
 
@@ -98,6 +98,30 @@ export default function DecksScreen() {
     });
   }
 
+  async function handleDeleteDeck(deckId: string, deckName: string) {
+    Alert.alert(
+      "Excluir Deck",
+      `Tem certeza que deseja excluir o deck "${deckName}"? Esta ação não pode ser desfeita.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteDeck(deckId);
+              showFeedback("Deck excluído com sucesso!", "success");
+              loadDecks(false);
+            } catch (error) {
+              console.error("Erro ao excluir deck:", error);
+              showFeedback("Erro ao excluir deck.", "error");
+            }
+          },
+        },
+      ],
+    );
+  }
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -148,6 +172,19 @@ export default function DecksScreen() {
                       />
                     </View>
                   )}
+
+                  <Pressable
+                    onPress={() => handleDeleteDeck(item.id, item.name)}
+                    hitSlop={10}
+                    style={styles.deleteIconButton}
+                  >
+                    <MaterialCommunityIcons
+                      name="trash-can-outline"
+                      size={18}
+                      color={colors.danger}
+                    />
+                  </Pressable>
+
 
 
                 </View>
@@ -339,5 +376,9 @@ const styles = StyleSheet.create({
     color: colors.background,
     fontSize: 14,
     fontWeight: "800",
+  },
+  deleteIconButton: {
+    padding: 4,
+    marginLeft: "auto",
   },
 });
