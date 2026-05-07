@@ -71,7 +71,7 @@ export default function DashboardScreen() {
   }, []);
 
   const loadDashboard = useCallback(
-    async (showLoading = true) => {
+    async (showLoading = true, signal?: AbortSignal) => {
       if (!isFirebaseConfigured) {
         showFeedback(
           "Firebase não configurado. Preencha as variáveis no .env.",
@@ -87,9 +87,9 @@ export default function DashboardScreen() {
         }
 
         const [decks, ownedSets, setCatalog] = await Promise.all([
-          getDecksByUser(),
-          getOwnedSetsWithCounts(),
-          getSets(1, 250),
+          getDecksByUser({ signal }),
+          getOwnedSetsWithCounts({ signal }),
+          getSets(1, 250, { signal }),
         ]);
 
         const setCatalogMap = new Map<string, PokemonTcgSet>(
@@ -139,9 +139,16 @@ export default function DashboardScreen() {
           validDecksCount: decks.filter((deck) => deck.isValid).length,
         });
         setCollections(mappedCollections);
-      } catch (error) {
-        console.error("Erro ao carregar dashboard:", error);
-        showFeedback("Erro ao carregar o dashboard.", "error");
+      } catch (error: any) {
+        // Ignora erros de cancelamento (quando o usuario navega para fora)
+        if (error.name === "CanceledError" || error.message === "canceled") {
+          return;
+        }
+
+        if (showLoading) {
+          console.error("Erro ao carregar dashboard:", error);
+          showFeedback("Erro ao carregar o dashboard.", "error");
+        }
       } finally {
         setLoading(false);
         setHasLoadedOnce(true);
@@ -152,7 +159,12 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadDashboard(!hasLoadedOnce);
+      const controller = new AbortController();
+      loadDashboard(!hasLoadedOnce, controller.signal);
+
+      return () => {
+        controller.abort();
+      };
     }, [hasLoadedOnce, loadDashboard]),
   );
 

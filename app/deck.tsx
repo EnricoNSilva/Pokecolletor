@@ -119,21 +119,14 @@ export default function DeckScreen() {
   const totalOwnedCount = Object.keys(ownedQuantities).length;
 
   const filteredCards = useMemo(() => {
-    const visibleCards = ownedOnly
+    // Se estivermos no modo "Apenas que possuo", filtramos localmente as cartas que o usuario tem
+    // Caso contrário, usamos a lista vinda da API (que ja pode estar filtrada por nome)
+    const baseCards = ownedOnly
       ? cards.filter((card) => (ownedQuantities[card.id] ?? 0) > 0)
       : cards;
-    const normalizedSearch = search.trim().toLowerCase();
 
-    if (!normalizedSearch) {
-      return visibleCards;
-    }
-
-    return visibleCards.filter(
-      (card) =>
-        card.name.toLowerCase().includes(normalizedSearch) ||
-        card.number.toLowerCase().includes(normalizedSearch),
-    );
-  }, [cards, ownedOnly, ownedQuantities, search]);
+    return baseCards;
+  }, [cards, ownedOnly, ownedQuantities]);
 
   const gridCards = useMemo(() => {
     const nextCards = [...filteredCards];
@@ -194,7 +187,9 @@ export default function DeckScreen() {
       }
 
       setError(null);
-      const response = await getCardsBySet(setId, nextPage, 24);
+      const response = await getCardsBySet(setId, nextPage, 24, {
+        pokemonName: search.trim(),
+      });
 
       setCards((previous) => {
         if (!append) {
@@ -247,8 +242,21 @@ export default function DeckScreen() {
   }
 
   useEffect(() => {
-    loadCards(1, false);
-  }, [setId]);
+    const trimmed = search.trim();
+
+    // Se a busca estiver vazia, recarregamos a lista inicial (página 1)
+    if (!trimmed) {
+      loadCards(1, false);
+      return;
+    }
+
+    // Se houver busca, aplicamos o debounce para não sobrecarregar a API
+    const timeoutId = setTimeout(() => {
+      loadCards(1, false);
+    }, 450);
+
+    return () => clearTimeout(timeoutId);
+  }, [search, setId]);
 
   useEffect(() => {
     loadOwnedCards();

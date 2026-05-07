@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { onAuthStateChanged, User } from "firebase/auth";
 
@@ -52,40 +53,46 @@ export default function RootLayout() {
   if (!isReady) {
     return (
       <GestureHandlerRootView style={styles.container}>
-        <FeedbackToastProvider>
-          <StatusBar style="light" />
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator color="#FFD700" />
-          </View>
-        </FeedbackToastProvider>
+        <SafeAreaProvider>
+          <FeedbackToastProvider>
+            <StatusBar style="light" />
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color="#FFD700" />
+            </View>
+          </FeedbackToastProvider>
+        </SafeAreaProvider>
       </GestureHandlerRootView>
     );
   }
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <FeedbackToastProvider>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: "#1E1E24",
-            },
-          }}
-        >
-          <Stack.Screen name="login" redirect={isAuthenticated} />
-          <Stack.Screen name="register" redirect={isAuthenticated} />
-          <Stack.Screen name="(drawer)" redirect={!isAuthenticated} />
-          <Stack.Screen name="deck" redirect={!isAuthenticated} />
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: "modal",
-            }}
-          />
-        </Stack>
-      </FeedbackToastProvider>
+      <SafeAreaProvider>
+        <FeedbackToastProvider>
+          <StatusBar style="light" />
+          <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: "#1E1E24",
+                },
+              }}
+            >
+              <Stack.Screen name="login" redirect={isAuthenticated} />
+              <Stack.Screen name="register" redirect={isAuthenticated} />
+              <Stack.Screen name="(drawer)" redirect={!isAuthenticated} />
+              <Stack.Screen name="deck" redirect={!isAuthenticated} />
+              <Stack.Screen
+                name="modal"
+                options={{
+                  presentation: "modal",
+                }}
+              />
+            </Stack>
+          </SafeAreaView>
+        </FeedbackToastProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

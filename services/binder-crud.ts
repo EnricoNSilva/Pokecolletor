@@ -120,7 +120,9 @@ export type OwnedSet = {
   uniqueCards: number;
 };
 
-export async function getOwnedSetsWithCounts(): Promise<OwnedSet[]> {
+export async function getOwnedSetsWithCounts(options?: {
+  signal?: AbortSignal;
+}): Promise<OwnedSet[]> {
   const binderRef = getBinderCollectionRef();
   const snapshot = await getDocs(binderRef);
 

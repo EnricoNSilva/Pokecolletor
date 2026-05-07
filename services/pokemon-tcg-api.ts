@@ -57,6 +57,7 @@ const pokemonTcgApi = axios.create({
 export async function getSets(
   page = 1,
   pageSize = 30,
+  options?: { signal?: AbortSignal },
 ): Promise<ListSetsResponse> {
   const response = await pokemonTcgApi.get<ListSetsResponse>("/sets", {
     params: {
@@ -64,6 +65,7 @@ export async function getSets(
       pageSize,
       orderBy: "-releaseDate",
     },
+    signal: options?.signal,
   });
 
   return response.data;
@@ -73,14 +75,21 @@ export async function getCardsBySet(
   setId: string,
   page = 1,
   pageSize = 24,
+  options?: { signal?: AbortSignal; pokemonName?: string },
 ): Promise<ListCardsResponse> {
+  let query = `set.id:${setId}`;
+  if (options?.pokemonName) {
+    query += ` name:"*${options.pokemonName}*"`;
+  }
+
   const response = await pokemonTcgApi.get<ListCardsResponse>("/cards", {
     params: {
-      q: `set.id:${setId}`,
+      q: query,
       page,
       pageSize,
       orderBy: "number",
     },
+    signal: options?.signal,
   });
 
   return response.data;
@@ -90,6 +99,7 @@ export async function getCardsByName(
   pokemonName: string,
   page = 1,
   pageSize = 50,
+  options?: { signal?: AbortSignal },
 ): Promise<ListCardsResponse> {
   const response = await pokemonTcgApi.get<ListCardsResponse>("/cards", {
     params: {
@@ -98,6 +108,7 @@ export async function getCardsByName(
       pageSize,
       orderBy: "-set.releaseDate",
     },
+    signal: options?.signal,
   });
 
   return response.data;

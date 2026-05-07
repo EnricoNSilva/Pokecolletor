@@ -166,7 +166,9 @@ export async function createDeck(
 /**
  * Retorna todos os decks do usuário
  */
-export async function getDecksByUser(): Promise<Deck[]> {
+export async function getDecksByUser(options?: {
+  signal?: AbortSignal;
+}): Promise<Deck[]> {
   const decksRef = getDecksCollectionRef();
   const snapshot = await getDocs(decksRef);
 
