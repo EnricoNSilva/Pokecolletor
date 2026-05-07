@@ -275,7 +275,7 @@ export default function DeckCardsScreen() {
         deck.isSimulated,
       );
       showFeedback("Deck salvo com sucesso!", "success");
-      handleGoBack();
+      router.replace("/(drawer)/decks");
     } catch (error) {
       console.error("Erro ao salvar deck:", error);
       showFeedback("Erro ao salvar deck.", "error");
