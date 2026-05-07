@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 
+import { getCardsBySet, PokemonTcgCard } from "@/services/pokemon-tcg-api";
 import {
   addOwnedCard,
   deleteOwnedCard,
@@ -23,7 +24,6 @@ import {
   updateOwnedCardQuantity,
 } from "../services/binder-crud";
 import { isFirebaseConfigured } from "../services/firebase";
-import { getCardsBySet, PokemonTcgCard } from "@/services/pokemon-tcg-api";
 
 const colors = {
   background: "#1E1E24",
@@ -77,11 +77,16 @@ function sortCardsByNumber(list: PokemonTcgCard[]) {
 
 export default function DeckScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ setId?: string; setName?: string }>();
+  const params = useLocalSearchParams<{
+    setId?: string;
+    setName?: string;
+    ownedOnly?: string;
+  }>();
 
   const setId = typeof params.setId === "string" ? params.setId : "";
   const setName =
     typeof params.setName === "string" ? params.setName : "Expansão";
+  const ownedOnly = params.ownedOnly === "true";
 
   const [cards, setCards] = useState<PokemonTcgCard[]>([]);
   const [search, setSearch] = useState("");
@@ -97,6 +102,8 @@ export default function DeckScreen() {
   const [pendingCardIds, setPendingCardIds] = useState<Record<string, boolean>>(
     {},
   );
+  const loadingPageRef = useRef<number | null>(null);
+  const isSearching = search.trim().length > 0;
 
   function blurFocusedElementOnWeb() {
     if (Platform.OS !== "web") {
@@ -109,7 +116,36 @@ export default function DeckScreen() {
     activeElement?.blur?.();
   }
 
-  const hasMore = cards.length < totalCount;
+  const totalOwnedCount = Object.keys(ownedQuantities).length;
+
+  const filteredCards = useMemo(() => {
+    const visibleCards = ownedOnly
+      ? cards.filter((card) => (ownedQuantities[card.id] ?? 0) > 0)
+      : cards;
+    const normalizedSearch = search.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return visibleCards;
+    }
+
+    return visibleCards.filter(
+      (card) =>
+        card.name.toLowerCase().includes(normalizedSearch) ||
+        card.number.toLowerCase().includes(normalizedSearch),
+    );
+  }, [cards, ownedOnly, ownedQuantities, search]);
+
+  const gridCards = useMemo(() => {
+    const nextCards = [...filteredCards];
+
+    if (nextCards.length % 2 === 1) {
+      nextCards.push({ id: "__placeholder__" } as PokemonTcgCard);
+    }
+
+    return nextCards;
+  }, [filteredCards]);
+
+
 
   function withPending(cardId: string, isPending: boolean) {
     setPendingCardIds((previous) => ({
@@ -147,32 +183,46 @@ export default function DeckScreen() {
       return;
     }
 
+    if (loadingPageRef.current === nextPage) {
+      return;
+    }
+
     try {
+      loadingPageRef.current = nextPage;
       if (nextPage === 1 && !append) {
         setLoading(true);
-      }
-
-      if (nextPage > 1) {
-        setLoadingMore(true);
       }
 
       setError(null);
       const response = await getCardsBySet(setId, nextPage, 24);
 
       setCards((previous) => {
-        const next = append ? [...previous, ...response.data] : response.data;
-        return sortCardsByNumber(next);
+        if (!append) {
+          return sortCardsByNumber(response.data);
+        }
+
+        // Filter out any duplicates just in case
+        const existingIds = new Set(previous.map((c) => c.id));
+        const newCards = response.data.filter((c) => !existingIds.has(c.id));
+
+        return sortCardsByNumber([...previous, ...newCards]);
       });
+
       setPage(response.page);
       setTotalCount(response.totalCount);
-    } catch (loadError) {
+    } catch (loadError: any) {
       setError("Não foi possível carregar as cartas desta expansão.");
+      const isTimeout = loadError?.code === "ECONNABORTED" || loadError?.message?.includes("timeout");
+      
       Alert.alert(
-        "Erro ao buscar cartas",
-        "Tente novamente em alguns segundos.",
+        isTimeout ? "Tempo esgotado" : "Erro ao buscar cartas",
+        isTimeout 
+          ? "A conexão está lenta. Tente novamente em instantes." 
+          : "Tente novamente em alguns segundos."
       );
       console.error("Erro ao carregar cartas por set:", loadError);
     } finally {
+      loadingPageRef.current = null;
       setLoading(false);
       setLoadingMore(false);
     }
@@ -188,10 +238,11 @@ export default function DeckScreen() {
   }
 
   async function handleLoadMore() {
-    if (loadingMore || loading || !hasMore) {
+    if (isSearching || loadingMore || loading || !hasMore || loadingPageRef.current !== null) {
       return;
     }
 
+    setLoadingMore(true);
     await loadCards(page + 1, true);
   }
 
@@ -278,20 +329,9 @@ export default function DeckScreen() {
     }
   }
 
-  const filteredCards = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    if (!normalizedSearch) {
-      return cards;
-    }
-
-    return cards.filter(
-      (card) =>
-        card.name.toLowerCase().includes(normalizedSearch) ||
-        card.number.toLowerCase().includes(normalizedSearch),
-    );
-  }, [cards, search]);
-
+  const hasMore = ownedOnly
+    ? filteredCards.length < totalOwnedCount
+    : cards.length < totalCount;
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -351,7 +391,7 @@ export default function DeckScreen() {
       />
 
       <FlatList
-        data={filteredCards}
+        data={gridCards}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.columns}
@@ -365,103 +405,117 @@ export default function DeckScreen() {
             tintColor={colors.accent}
           />
         }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image
-              source={{ uri: item.images.small }}
-              style={styles.cardImage}
-              contentFit="cover"
-            />
-            <View style={styles.cardInfo}>
-              <Text style={styles.cardName} numberOfLines={2}>
-                {item.name}
-              </Text>
-              <Text style={styles.cardMeta}>#{item.number}</Text>
-              <Text style={styles.cardMeta}>
-                {item.rarity ?? "Raridade não informada"}
-              </Text>
+        renderItem={({ item }) => {
+          if (item.id === "__placeholder__") {
+            return <View style={styles.cardPlaceholder} />;
+          }
 
-              <View style={styles.crudArea}>
-                <Pressable
-                  onPress={() => handleToggleOwned(item)}
-                  disabled={Boolean(pendingCardIds[item.id])}
-                  style={[
-                    styles.ownedButton,
-                    ownedQuantities[item.id]
-                      ? styles.ownedButtonActive
-                      : undefined,
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    name={
-                      ownedQuantities[item.id]
-                        ? "checkbox-marked"
-                        : "checkbox-blank-outline"
-                    }
-                    size={16}
-                    color={ownedQuantities[item.id] ? "#1E1E24" : colors.text}
-                  />
-                  <Text
+          return (
+            <View style={styles.card}>
+              <Image
+                source={{ uri: item.images.small }}
+                style={styles.cardImage}
+                contentFit="cover"
+              />
+              <View style={styles.cardInfo}>
+                <Text style={styles.cardName} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                <Text style={styles.cardMeta}>#{item.number}</Text>
+                <Text style={styles.cardMeta}>
+                  {item.rarity ?? "Raridade não informada"}
+                </Text>
+
+                <View style={styles.crudArea}>
+                  <Pressable
+                    onPress={() => handleToggleOwned(item)}
+                    disabled={Boolean(pendingCardIds[item.id])}
                     style={[
-                      styles.ownedButtonText,
+                      styles.ownedButton,
                       ownedQuantities[item.id]
-                        ? styles.ownedButtonTextActive
+                        ? styles.ownedButtonActive
                         : undefined,
                     ]}
                   >
-                    Eu tenho
-                  </Text>
-                </Pressable>
-
-                {ownedQuantities[item.id] ? (
-                  <View style={styles.qtyRow}>
-                    <Pressable
-                      onPress={() =>
-                        handleChangeQuantity(
-                          item.id,
-                          (ownedQuantities[item.id] ?? 1) - 1,
-                        )
+                    <MaterialCommunityIcons
+                      name={
+                        ownedQuantities[item.id]
+                          ? "checkbox-marked"
+                          : "checkbox-blank-outline"
                       }
-                      disabled={Boolean(pendingCardIds[item.id])}
-                      style={styles.qtyButton}
+                      size={16}
+                      color={ownedQuantities[item.id] ? "#1E1E24" : colors.text}
+                    />
+                    <Text
+                      style={[
+                        styles.ownedButtonText,
+                        ownedQuantities[item.id]
+                          ? styles.ownedButtonTextActive
+                          : undefined,
+                      ]}
                     >
-                      <MaterialCommunityIcons
-                        name="minus"
-                        size={16}
-                        color={colors.text}
-                      />
-                    </Pressable>
-
-                    <Text style={styles.qtyText}>
-                      x{ownedQuantities[item.id]}
+                      Eu tenho
                     </Text>
+                  </Pressable>
 
-                    <Pressable
-                      onPress={() =>
-                        handleChangeQuantity(
-                          item.id,
-                          (ownedQuantities[item.id] ?? 1) + 1,
-                        )
-                      }
-                      disabled={Boolean(pendingCardIds[item.id])}
-                      style={styles.qtyButton}
-                    >
-                      <MaterialCommunityIcons
-                        name="plus"
-                        size={16}
-                        color={colors.text}
-                      />
-                    </Pressable>
-                  </View>
-                ) : null}
+                  {ownedQuantities[item.id] ? (
+                    <View style={styles.qtyRow}>
+                      <Pressable
+                        onPress={() =>
+                          handleChangeQuantity(
+                            item.id,
+                            (ownedQuantities[item.id] ?? 1) - 1,
+                          )
+                        }
+                        disabled={Boolean(pendingCardIds[item.id])}
+                        style={styles.qtyButton}
+                      >
+                        <MaterialCommunityIcons
+                          name="minus"
+                          size={16}
+                          color={colors.text}
+                        />
+                      </Pressable>
+
+                      <Text style={styles.qtyText}>
+                        x{ownedQuantities[item.id]}
+                      </Text>
+
+                      <Pressable
+                        onPress={() =>
+                          handleChangeQuantity(
+                            item.id,
+                            (ownedQuantities[item.id] ?? 1) + 1,
+                          )
+                        }
+                        disabled={Boolean(pendingCardIds[item.id])}
+                        style={styles.qtyButton}
+                      >
+                        <MaterialCommunityIcons
+                          name="plus"
+                          size={16}
+                          color={colors.text}
+                        />
+                      </Pressable>
+                    </View>
+                  ) : null}
+                </View>
               </View>
             </View>
-          </View>
-        )}
+          );
+        }}
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.footerLoading}>
               <ActivityIndicator color={colors.accent} />
+            </View>
+          ) : !hasMore && filteredCards.length > 0 ? (
+            <View style={styles.footerEnd}>
+              <Text style={styles.footerEndText}>
+                {ownedOnly
+                  ? "Todas as suas cartas desta coleção foram carregadas."
+                  : "Fim da lista de cartas."}
+              </Text>
             </View>
           ) : null
         }
@@ -574,6 +628,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 10,
   },
+  cardPlaceholder: {
+    flex: 1,
+    marginBottom: 10,
+    opacity: 0,
+  },
   cardImage: {
     width: "100%",
     aspectRatio: 0.72,
@@ -667,5 +726,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     lineHeight: 20,
+  },
+  footerEnd: {
+    paddingVertical: 32,
+    alignItems: "center",
+  },
+  footerEndText: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

@@ -86,11 +86,12 @@ export default function BinderScreen() {
       setRefreshing(false);
     }
   }
-
+  
+  // Navega para a tela de deck com as cartas da expansão dentro do fichário
   function handleNavigateToSet(set: OwnedSet) {
     router.push({
       pathname: "/deck",
-      params: { setId: set.setId, setName: set.setName },
+      params: { setId: set.setId, setName: set.setName, ownedOnly: "true" },
     });
   }
 

@@ -219,7 +219,7 @@ export default function DeckBuilderScreen() {
         showFeedback("Deck criado com sucesso!", "success");
       }
 
-      router.back();
+      router.replace("/(drawer)/decks");
     } catch (error) {
       console.error("Erro ao salvar deck:", error);
       showFeedback("Erro ao salvar deck.", "error");
