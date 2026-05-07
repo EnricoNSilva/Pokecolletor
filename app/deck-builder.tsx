@@ -53,7 +53,7 @@ export default function DeckBuilderScreen() {
 
   const [deckName, setDeckName] = useState("");
   const [deckDescription, setDeckDescription] = useState("");
-  const [isSimulated, setIsSimulated] = useState(false);
+  const isSimulated = false;
   const [deckCards, setDeckCards] = useState<DeckCard[]>([]);
   const [validation, setValidation] = useState<DeckValidation | null>(null);
 
@@ -81,7 +81,6 @@ export default function DeckBuilderScreen() {
 
           setDeckName(deck.name);
           setDeckDescription(deck.description);
-          setIsSimulated(deck.isSimulated);
           setDeckCards(deck.cards);
           setValidation(validateDeck(deck.cards));
         } catch (error) {
@@ -254,81 +253,7 @@ export default function DeckBuilderScreen() {
           <View style={{ width: 24 }} />
         </View>
 
-        {/* Tipo de Deck */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tipo de Deck</Text>
-          <View style={styles.toggleGroup}>
-            <Pressable
-              style={[
-                styles.toggleButton,
-                !isSimulated && styles.toggleButtonActive,
-              ]}
-              onPress={() => setIsSimulated(false)}
-            >
-              <MaterialCommunityIcons
-                name="briefcase"
-                size={20}
-                color={!isSimulated ? colors.background : colors.muted}
-              />
-              <Text
-                style={[
-                  styles.toggleButtonText,
-                  !isSimulated && styles.toggleButtonTextActive,
-                ]}
-              >
-                Real
-              </Text>
-            </Pressable>
 
-            <Pressable
-              style={[
-                styles.toggleButton,
-                isSimulated && styles.toggleButtonActive,
-              ]}
-              onPress={() => setIsSimulated(true)}
-            >
-              <MaterialCommunityIcons
-                name="lightbulb"
-                size={20}
-                color={isSimulated ? colors.background : colors.muted}
-              />
-              <Text
-                style={[
-                  styles.toggleButtonText,
-                  isSimulated && styles.toggleButtonTextActive,
-                ]}
-              >
-                Simulado
-              </Text>
-            </Pressable>
-          </View>
-
-          {isSimulated && (
-            <View style={styles.infoBox}>
-              <MaterialCommunityIcons
-                name="information"
-                size={16}
-                color={colors.accent}
-              />
-              <Text style={styles.infoText}>
-                Você pode usar qualquer carta neste deck.
-              </Text>
-            </View>
-          )}
-
-          {!isSimulated && (
-            <View style={styles.infoBox}>
-              <MaterialCommunityIcons
-                name="information"
-                size={16}
-                color={colors.success}
-              />
-              <Text style={styles.infoText}>
-                Apenas cartas que você possui podem ser usadas.
-              </Text>
-            </View>
-          )}
-        </View>
 
         {/* Informações do Deck */}
         <View style={styles.section}>
@@ -418,16 +343,14 @@ export default function DeckBuilderScreen() {
                         {item.subtypes && ` • ${item.subtypes.join(", ")}`}
                       </Text>
 
-                      {!isSimulated && (
-                        <Text
-                          style={[
-                            styles.cardOwned,
-                            owned === 0 && styles.cardOwnedZero,
-                          ]}
-                        >
-                          Você tem: {owned}
-                        </Text>
-                      )}
+                      <Text
+                        style={[
+                          styles.cardOwned,
+                          owned === 0 && styles.cardOwnedZero,
+                        ]}
+                      >
+                        Você tem: {owned}
+                      </Text>
                     </View>
 
                     {canAdd && (
@@ -443,7 +366,7 @@ export default function DeckBuilderScreen() {
                       </Pressable>
                     )}
 
-                    {!canAdd && !isSimulated && (
+                    {(!canAdd) && (
                       <View style={styles.addButtonDisabled}>
                         <MaterialCommunityIcons
                           name="lock"
@@ -485,7 +408,7 @@ export default function DeckBuilderScreen() {
                       <Text style={styles.deckCardName} numberOfLines={1}>
                         {item.cardName}
                       </Text>
-                      {!isSimulated && owned > 0 && (
+                      {owned > 0 && (
                         <Text style={styles.deckCardOwned}>
                           Tem: {owned} • Deck: {item.quantity}
                         </Text>

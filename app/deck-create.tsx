@@ -29,7 +29,6 @@ export default function DeckCreateScreen() {
   const { showFeedback } = useFeedbackToast();
 
   const [deckName, setDeckName] = useState("");
-  const [isSimulated, setIsSimulated] = useState(false);
   const [loading, setLoading] = useState(false);
 
   function handleGoBack() {
@@ -48,7 +47,7 @@ export default function DeckCreateScreen() {
 
     try {
       setLoading(true);
-      const newDeck = await createDeck(deckName, "", [], isSimulated);
+      const newDeck = await createDeck(deckName, "", [], false);
       showFeedback("Deck criado! Adicione cartas agora.", "success");
       router.push({
         pathname: "/deck-cards",
@@ -94,7 +93,7 @@ export default function DeckCreateScreen() {
           />
           <Text style={styles.heroTitle}>Vamos criar um novo deck!</Text>
           <Text style={styles.heroDescription}>
-            Escolha um nome e o tipo de deck para começar
+            Escolha um nome para o seu novo deck Pokémon
           </Text>
         </View>
 
@@ -111,74 +110,7 @@ export default function DeckCreateScreen() {
           />
         </View>
 
-        {/* Tipo de Deck */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Tipo de Deck *</Text>
 
-          <Pressable
-            style={[styles.typeCard, !isSimulated && styles.typeCardActive]}
-            onPress={() => setIsSimulated(false)}
-            disabled={loading}
-          >
-            <View style={styles.typeCardContent}>
-              <MaterialCommunityIcons
-                name="briefcase"
-                size={32}
-                color={!isSimulated ? colors.background : colors.muted}
-              />
-              <View style={styles.typeCardInfo}>
-                <Text
-                  style={[
-                    styles.typeCardTitle,
-                    !isSimulated && styles.typeCardTitleActive,
-                  ]}
-                >
-                  Deck Real
-                </Text>
-                <Text
-                  style={[
-                    styles.typeCardDescription,
-                    !isSimulated && styles.typeCardDescriptionActive,
-                  ]}
-                >
-                  Apenas cartas que você possui
-                </Text>
-              </View>
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={[styles.typeCard, isSimulated && styles.typeCardActive]}
-            onPress={() => setIsSimulated(true)}
-            disabled={loading}
-          >
-            <View style={styles.typeCardContent}>
-              <MaterialCommunityIcons
-                name="lightbulb"
-                size={32}
-                color={isSimulated ? colors.background : colors.muted}
-              />
-              <View style={styles.typeCardInfo}>
-                <Text
-                  style={[
-                    styles.typeCardTitle,
-                    isSimulated && styles.typeCardTitleActive,
-                  ]}
-                >
-                  Deck Simulado
-                </Text>
-                <Text
-                  style={[
-                    styles.typeCardDescription,
-                    isSimulated && styles.typeCardDescriptionActive,
-                  ]}
-                >
-                  Qualquer combinação de cartas
-                </Text>
-              </View>
-            </View>
-          </Pressable>
-        </View>
 
         {/* Info */}
         <View style={styles.infoBox}>

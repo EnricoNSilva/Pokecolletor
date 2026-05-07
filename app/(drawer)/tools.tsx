@@ -377,8 +377,29 @@ export default function ToolsScreen() {
           />
         </View>
 
-        <Text style={styles.timerText}>{formatTime(remainingSeconds)}</Text>
-        <Text style={styles.helperText}>Ao zerar, dispara vibracao e som.</Text>
+        <View style={styles.timerContainer}>
+          <Text
+            style={[
+              styles.timerText,
+              remainingSeconds <= 10 && remainingSeconds > 0 && { color: colors.danger },
+            ]}
+          >
+            {formatTime(remainingSeconds)}
+          </Text>
+          <View style={styles.timerProgressTrack}>
+            <View
+              style={[
+                styles.timerProgressBar,
+                {
+                  width: `${(remainingSeconds / timerPreset) * 100}%`,
+                  backgroundColor:
+                    remainingSeconds <= 10 ? colors.danger : colors.accent,
+                },
+              ]}
+            />
+          </View>
+        </View>
+        <Text style={styles.helperText}>Ao zerar, dispara vibração e som.</Text>
 
         <View style={styles.presetRow}>
           {[30, 45, 60].map((preset) => (
@@ -599,6 +620,20 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 14,
     fontWeight: "700",
+  },
+  timerContainer: {
+    gap: 12,
+    marginVertical: 8,
+  },
+  timerProgressTrack: {
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  timerProgressBar: {
+    height: "100%",
+    borderRadius: 3,
   },
   noticeCard: {
     flexDirection: "row",

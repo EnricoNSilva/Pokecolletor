@@ -149,11 +149,7 @@ export default function DecksScreen() {
                     </View>
                   )}
 
-                  {item.isSimulated && (
-                    <View style={styles.simulatedBadge}>
-                      <Text style={styles.simulatedBadgeText}>SIMULADO</Text>
-                    </View>
-                  )}
+
                 </View>
 
                 <Text style={styles.deckCardDescription} numberOfLines={1}>
@@ -285,18 +281,7 @@ const styles = StyleSheet.create({
   invalidBadge: {
     padding: 4,
   },
-  simulatedBadge: {
-    backgroundColor: "rgba(255, 215, 0, 0.15)",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  simulatedBadgeText: {
-    color: colors.accent,
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
+
   deckCardDescription: {
     color: colors.muted,
     fontSize: 13,
