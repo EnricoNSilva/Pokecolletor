@@ -1,112 +1,108 @@
 # PokéCollector — Gerenciador Pessoal de Coleção Pokémon TCG
 
-Este repositório contém a aplicação mobile desenvolvida com Expo para gerenciar coleções de cartas Pokémon TCG de forma prática: fichário pessoal, navegação por expansões, construção/validação de decks e utilitários para partidas.
-
 ## Visão Geral e Requisitos
 
-- Motivação: eu coleciono cartas Pokémon TCG e precisava de uma ferramenta para controlar quantidades, acompanhar progresso por expansão e facilitar partidas (moeda, dado, timer). O app é pensado para uso pessoal, com sincronização por usuário via Firestore.
-- Objetivo: permitir que um colecionador registre cartas, saiba em quais expansões está mais completo, crie e valide decks, e use utilitários durante partidas com feedback sonoro e háptico.
-- Requisitos técnicos mínimos:
-  - Node.js 18+ / npm
-  - Expo CLI (compatível com SDK 54)
-  - Conta Firebase (para autenticação e Firestore)
+**Tema:** Aplicação mobile para colecionadores de Pokémon TCG (Trading Card Game).
 
-## Tecnologias utilizadas
+**Motivação:** Como colecionador, identifiquei a necessidade de uma ferramenta centralizada para controlar o inventário de cartas (fichário), acompanhar o progresso de completude de cada expansão lançada e auxiliar durante partidas reais com ferramentas utilitárias.
 
-- Expo (SDK 54) + React Native
-- React 19, TypeScript
-- Expo Router (navegação baseada em arquivos)
-- Firebase Authentication & Firestore (persistência por usuário)
-- Axios (chamadas à Pokémon TCG API)
-- expo-sensors (Acelerômetro), expo-av (Áudio), expo-haptics (Haptics)
-- react-native-gesture-handler, react-native-reanimated (UX)
-- MaterialCommunityIcons (ícones)
+**Objetivo:** Oferecer uma experiência fluida para registrar cartas possuídas, validar a legalidade de decks criados e fornecer suporte técnico (sorteios e timers) durante o jogo físico.
 
-Principais bibliotecas e por que foram escolhidas:
+**Requisitos do Projeto Atendidos:**
+- **Mínimo de 6 telas:** O projeto conta com 8 telas principais (Dashboard, Fichário, Explorar, Detalhes da Expansão, Lista de Decks, Criador de Deck, Editor de Deck e Ferramentas).
+- **Navegação:** Implementada via `Expo Router` utilizando uma combinação de **Drawer Navigation** (menu lateral) e **Stack Navigation** (fluxos internos).
+- **Banco de Dados (CRUD):** Integração total com **Firebase Firestore** para persistência de dados em nuvem por usuário.
+- **Sensores e Atuadores:** Uso de **Acelerômetro** (sensor) para detecção de movimento e **Vibração/Áudio** (atuadores) para feedback ao usuário.
+- **Interface e UX:** Design moderno em Dark Mode, com alinhamento consistente, espaçamento adequado e feedbacks visuais de carregamento e erro.
 
-- `expo-router`: roteamento baseado em arquivos que simplifica a organização das telas, integração com layouts (Stack/Drawer) e deep linking; reduz boilerplate de navegação.
-- `expo-av`: fornece API consistente para reprodução de áudio em Android, iOS e web (quando suportado), permitindo empacotar sons como assets e reproduzi-los com controle de volume e replay, usado em coin flip, dice e timer.
-- `firebase` (Auth + Firestore): solução gerenciada para autenticação e persistência por usuário, com sincronização em tempo real e regras de segurança que facilitam armazenar fichários e decks por `uid`.
+---
 
-> **Nota de Documentação:** Sempre que uma biblioteca adicional do ecossistema React/Expo foi utilizada para funções específicas, o código-fonte contém comentários detalhando o motivo técnico da sua escolha e sua aplicação prática no contexto do componente.
+## Tecnologias Utilizadas
+
+- **Linguagem:** TypeScript.
+- **Framework:** React Native com Expo (SDK 54).
+- **Navegação:** Expo Router (Roteamento baseado em arquivos).
+- **Backend (Nuvem):** 
+  - Firebase Authentication (Gestão de usuários).
+  - Firestore (Banco de dados NoSQL em tempo real).
+- **API de Dados:** Pokémon TCG API v2 (via Axios).
+- **Bibliotecas de Hardware/Nativa:**
+  - `expo-sensors`: Captura de dados do acelerômetro.
+  - `expo-haptics`: Controle de atuador de vibração.
+  - `expo-av`: Sistema de áudio para efeitos sonoros.
+- **Estilização e UX:** 
+  - Vanilla StyleSheet (CSS-in-JS) para controle total de layout.
+  - `react-native-reanimated` e `react-native-gesture-handler` para interações suaves.
+
+---
 
 ## Funcionalidades
 
-1. Autenticação
-   - `Email` + `senha` via Firebase Auth.
-   - Perfil do usuário sincronizado em `users/{uid}` no Firestore.
+### 1. Autenticação e Perfil
+Sistema de login e cadastro integrado ao Firebase. Cada usuário possui seu próprio documento no banco de dados, garantindo que sua coleção seja privada e sincronizada entre dispositivos.
 
-2. Fichário (Binder)
-   - Adicionar/remover cartas com quantidade.
-   - Agregação por expansão: número total de cartas e cartas únicas.
+### 2. Gestão de Fichário (CRUD Completo)
+O coração do app permite o controle total das cartas que o usuário possui:
+- **Create:** Adicionar cartas ao clicar em "Eu tenho".
+- **Read:** Visualizar progresso de expansões no Dashboard e listar cartas possuídas filtradas por set.
+- **Update:** Incrementar ou decrementar a quantidade de cópias de cada carta.
+- **Delete:** Remover cartas do inventário.
 
-3. Navegação por Expansões e Catálogo
-   - Integração com Pokémon TCG API para listar sets e cartas.
-   - Cabeçalho animado que oculta/mostra ao rolar (com fallback no web).
-   - Ordenação confiável por número da carta implementada no cliente para tratar casos alfanuméricos.
+### 3. Construtor e Validador de Decks
+Uma funcionalidade complexa que permite criar decks respeitando as regras oficiais:
+- Validação de limite de 60 cartas.
+- Verificação de limite de 4 cópias por carta (exceto energias básicas).
+- Classificação por tipo de deck (Simulado vs Real).
 
-4. Decks
-   - Criar, editar e deletar decks.
-   - Validação de regras: 60 cartas, pelo menos 1 Pokémon Básico, até 4 cópias por mesmo nome (exceto Basic Energy).
+### 4. Ferramentas de Partida (Sensores e Atuadores)
+Melhoria da interação do usuário com o hardware do celular:
+- **Giro de Moeda e Dados:** Sorteios aleatórios com feedback de **vibração (Haptic)** e **som**.
+- **Acelerômetro:** O dado pode ser rolado fisicamente ao "chacoalhar" o aparelho (detectado via sensor de movimento).
+- **Timer de Turno:** Cronômetro com alertas sonoros ao finalizar o tempo.
 
-5. Dashboard
-   - Estatísticas do usuário: expansões, cartas totais, cartas únicas, decks válidos.
-   - Barras de progresso por expansão (ordenadas por completude).
+### 5. Exploração de Catálogo
+Acesso a milhares de cartas de todas as gerações através da integração com a Pokémon TCG API, com suporte a paginação (Infinite Scroll) e busca por nome ou número.
 
-6. Ferramentas de partida
-   - Coin flip (moeda), dado d6 (botão ou chacoalhar), timer de turno com presets.
-   - Feedbacks: vibração (haptics) e sons locais (assets empacotados via `require(...)`).
-   - Acelerômetro protegido com checagens de disponibilidade (web fallback).
+---
 
 ## Demonstração
+<img src="assets/images/gif_readme_pokecollector.gif" alt="Gif demonstrativo" width="200"></img>
 
-![Demo placeholder](docs/demo.gif)
+Demonstração completa do app disponível no <a href="https://youtube.com/shorts/I3xsHive_4k">Link.</a>
+---
 
 ## Instalação e Execução
 
-1. Clone o repositório:
+Para rodar este projeto localmente, siga os passos abaixo:
 
-```bash
-git clone https://github.com/EnricoNSilva/Pokecolletor.git
-cd Pokecolletor
-```
+1. **Clonar o repositório:**
+   ```bash
+   git clone https://github.com/EnricoNSilva/Pokecolletor.git
+   cd Pokecolletor
+   ```
 
-2. Instale dependências:
+2. **Instalar dependências:**
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
-```
+3. **Configurar Variáveis de Ambiente:**
+   Crie um arquivo `.env` na raiz do projeto seguindo o modelo do `.env.example` e insira suas credenciais do Firebase.
 
-3. Configurar Firebase
-   - Crie um arquivo `.env` a partir de `.env.example` e preencha as chaves do Firebase (API key, project id, etc.).
+4. **Iniciar o servidor Expo:**
+   ```bash
+   npx expo start
+   ```
+   *Utilize o aplicativo **Expo Go** no Android para escanear o QR Code ou pressione `w` para abrir a versão Web.*
 
-4. Start (com cache limpo quando houver mudanças de dependências):
-
-```bash
-npx expo start --clear
-```
-
-5. Rodar nas plataformas:
-
-- Android emulator: pressione `a` no terminal do Expo
-- iOS simulator: pressione `i`
-- Web: pressione `w`
-
-Notas úteis:
-
-- Se o Expo relatar incompatibilidades com módulos nativos, execute `npx expo install --fix` e reinstale `node_modules` quando necessário.
-- Para adicionar sons, coloque os arquivos em `assets/sounds` e carregue com `require("../../assets/sounds/arquivo.mp3")`.
+---
 
 ## Aprendizados e Próximos Passos
 
-Aprendizados principais:
+### Aprendizados Principais
+Desenvolver este projeto trouxe desafios técnicos significativos, especialmente na **lógica de ordenação de dados**. As cartas Pokémon possuem numerações alfanuméricas complexas (ex: 101/100, TG23, SV01), o que exigiu a criação de um algoritmo de ordenação customizado no front-end para garantir uma experiência de visualização correta. Além disso, a implementação de **sensores** exigiu um tratamento cuidadoso de permissões e disponibilidade de hardware entre diferentes plataformas (Android vs Web).
 
-- O campo `number` retornado pela Pokémon TCG API pode ser alfanumérico; por isso a ordenação por número pode falhar para alguns sets. A solução foi ordenar no cliente com uma função que considera número base e sufixo alfabético.
-- Plataformas cruzadas pedem checagens explícitas (`Platform.OS`, `isAvailableAsync`) e fallbacks (desabilitar shake na web, tocar áudio via assets locais).
-- Manter o histórico de commits pequeno e temático ajuda a revisar mudanças (ex.: `feat(tools)`, `fix(web)`, `chore(deps)`).
-
-Próximos passos:
-
-- Melhorar cache/offline para cartas por set.
-- Aprimorar editor de decks com drag-and-drop e agrupamentos.
-- Adicionar CI (GitHub Actions) para builds web/mobile no push.
+### Próximos Passos
+- Implementar cache local persistente para reduzir o consumo da API.
+- Adicionar suporte a leitura de QR Code para importar listas de decks.
+- Criar um sistema de "Lista de Desejos" (Wishlist) para cartas que o usuário ainda não possui.
